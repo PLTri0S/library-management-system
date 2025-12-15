@@ -187,6 +187,7 @@ private:
   }
   END METHOD
 
+  //ADD BOOKS
   method void addBook(string isbn, string title, string author, string publisher, DATE year, string genre, string language) { 
     if existsBookWithISBN(isbn) { print("Book already exists") return }
 
@@ -207,7 +208,8 @@ private:
     book_copies.add(copy)
   }
   END METHOD
-
+  
+  //EDIT BOOKS
   method boolean editBook(int book_id, string new_title, string new_author, string new_publisher, DATE new_year, string new_genre, string new_language) {
     BOOK book = findBook(book_id)
     if book == null { print("Book not found") return false }
@@ -222,6 +224,7 @@ private:
   }
   END METHOD
 
+  //DELETE BOOKS  
   method boolean deleteBook(int book_id) { 
     BOOK book = findBook(book_id)
     if book == null { print("Book not found") return false }
@@ -236,16 +239,15 @@ private:
   }
   END METHOD
 
+  //SEARCH & SORT
+  method toLowerCase(string str) {}
+  END METHOD
+
   method list<BOOK> searchByKeyword(string keyword) { 
-    string keyword_lower = toLowerCase(keyword)
-    list<BOOK> results = []
-    for each book in books {
-      if toLowerCase(book.getTitle()).contains(keyword_lower) OR 
-         toLowerCase(book.getAuthor()).contains(keyword_lower) OR 
-         toLowerCase(book.getGenre()).contains(keyword_lower) {
-        results.add(book)
-      }
-    }
+    keyword_lower = toLowerCase(keyword)
+    ....    
+
+    
     return results
   }
   END METHOD
