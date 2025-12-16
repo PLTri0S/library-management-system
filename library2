@@ -136,10 +136,10 @@ public:
   boolean checkBorrowLimit(int user_id, int max_borrows) {}
 
   // Cập nhật trả sách 
-  boolean returnBook(int card_id, user_id, string barcode, date return_date) {}
+  boolean returnBook(int card_id, string barcode, date return_date) {}
 
   // Gia hạn ngày trả sách
-  boolean extendDueDate(int card_id, user_id, date new_due_date, int max_extensions) {}
+  boolean extendDueDate(int card_id, date new_due_date, int max_extensions) {}
 
   //Lịch sử mượn sách của người dùng
   list<BorrowingCard> getUserBorrowingHistory(int user_id) {}
@@ -156,13 +156,13 @@ public:
   boolean cancelReservation(int reservation_id) {}
 
   // Hủy đặt trước nếu quá hạn đến ngày lấy sách
-  boolean autoCancelExpiredReservations(int reservation_id, int user_id, date current_date) {}
+  boolean autoCancelExpiredReservations(int reservation_id, date current_date) {}
 
   // Nhận sách đã đặt trước
-  boolean pickupBook(int reservation_id, int user_id) {}
+  boolean pickupBook(int reservation_id) {}
 
   // Chuyển từ đặt trước sang mượn sách
-  boolean transferReservationToBorrow(int reservation_id, int user_id, string barcode, date borrow_date, date due_date) {}
+  boolean transferReservationToBorrow(int reservation_id, date borrow_date, date due_date) {}
   
   // Giới hạn đặt trước cho mỗi cuốn sách chỉ 1 người dùng được đặt trước
   boolean checkReservationLimit(int user_id, string barcode) {}
