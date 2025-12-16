@@ -143,7 +143,6 @@ public:
 
   //Lịch sử mượn sách của người dùng
   list<BorrowingCard> getUserBorrowingHistory(int user_id) {}
-  list<ReserveCard> getUserReserveHistory(int user_id) {}
 
 class ReservationManager
 private:
@@ -166,3 +165,4 @@ public:
   
   // Giới hạn đặt trước cho mỗi cuốn sách chỉ 1 người dùng được đặt trước
   boolean checkReservationLimit(int user_id, string barcode) {}
+
