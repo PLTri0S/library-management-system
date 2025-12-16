@@ -1,10 +1,11 @@
-enum BookStatus { AVAILABLE, LOANED, LOST }
+enum BookStatus { AVAILABLE, RESERVED, LOANED, LOST }
 enum UserRole { LIBRARIAN, MEMBER }
+enum ReservedStatus { PENDING, SUCCESS, CANCELLED, TRANSFERRED }
 
 //Các trường của sách
-CLASS BOOK 
+class Book
 private:
-  int m_book_id
+  int m_book_id // Primary Key
   string m_ISBN
   string m_title
   string m_author
@@ -12,33 +13,41 @@ private:
   date m_year
   string m_genre
   string m_language
-END CLASS
-
+  
 //Các trường của 1 bản vật lý của sách
-CLASS BOOKCOPY 
+class BookCopy
 private:
   int m_book_id // Foreign key to BOOK
   string m_barcode
   string m_shelf_location
-  status m_book_status 
-END CLASS
+  BookStatus m_book_status 
 
 // Các trường của 1 người dùng
-CLASS LIBRARYUSER 
+class LibraryUser
 private:
-  int m_user_id
+  UserRole m_user_role
+  int m_user_id // Primary Key
   string m_full_name
   string m_email
   string m_password_hash
   date m_created_at
-END CLASS
+
+// Các trường của 1 thẻ đặt trước
+class ReservationCard
+private:
+  int m_reservation_id // Primary Key
+  int m_user_id
+  string m_barcode
+  date m_reservation_date
+  date m_pickup_deadline
+  ReservedStatus m_status
 
 // Các trường của 1 thẻ mượn
-CLASS BORROWINGCARD 
+class BorrowingCard
 private:
-  int m_card_id
+  int m_card_id // Primary Key
   int m_user_id
-  int m_barcode
+  string m_barcode
   date m_borrow_date
   date m_due_date
   date m_return_date
@@ -47,121 +56,113 @@ private:
 
 public:
   // Kiểm tra quá hạn 
-  method boolean isOverdue(date current_date) {}
-  END METHOD
+  boolean isOverdue(date current_date) {}
 
   // Kiểm tra có thể gia hạn được không 
-  method boolean canExtend(int max_extensions) {}
-  END METHOD
+  boolean canExtend(int max_extensions) {}
 
-  //Tính tiền phạt
-  method int calculateFine(int fine_amount) {}
-  END METHOD
+  //Tính tiền phạt, quá hạn x ngày thì fine_per_day nhân x ngày
+  int calculateFine(date current_date, int fine_per_day) {}
 
-END CLASS
-
-CLASS BookManager
+class BookManager
 private:
-  list<BOOK> books
-  list<BOOKCOPY> book_copies
+  list<Book> books
+  list<BookCopy> book_copies
 
 public:
   //ADD BOOKS
-  method void addBook(string isbn, string title, string author, string publisher, date year, string genre, string language) {}
-  END METHOD
+  void addBook(string isbn, string title, string author, string publisher, date year, string genre, string language) {}
 
   //Add copy of books
-  method void addBookCopy(int book_id, string barcode, string shelf_location) {} 
-  END METHOD
-  
+  void addBookCopy(int book_id, string barcode, string shelf_location) {} 
+
   //EDIT BOOKS
-  method boolean editBook(string new_title, string new_author, string new_publisher, date new_year, string new_genre, string new_language) {}
-  END METHOD
+  boolean editBook(int book_id, string new_title, string new_author, string new_publisher, date new_year, string new_genre, string new_language) {}
 
   //DELETE BOOKS  
-  method boolean deleteBook(int book_id) {}
-  END METHOD
+  boolean deleteBook(int book_id) {}
 
-  //SEARCH & SORT
+  //SEARCH
   //Chuyển về chữ thường
-  method string toLowerCase(string str) {}
-  END METHOD
+  string toLowerCase(string str) {}
 
   //Tìm theo từ khóa
-  method list<BOOK> searchByKeyword(string keyword) {}
-  END METHOD
+  list<Book> searchByKeyword(string keyword) {}
+  list<Book> searchByAuthor(string author) {}
+  list<Book> searchByTitle(string title) {}
+  list<Book> searchByGenre(string genre) {}
+  list<Book> searchByPublisher(string publisher) {}
 
-  method void searchByAuthor(string author) {}
-  END METHOD
+  //Sắp xếp
+  list<Book> sortBooksByTitleAscending() {}
+  list<Book> sortBooksByTitleDescending() {}
+  list<Book> sortBooksByYearAscending() {}
+  list<Book> sortBooksByYearDescending() {}
 
-  method void searchByTitle(string title) {}
-  END METHOD
-  
-  method void searchByGenre(string genre) {}
-  END METHOD
-
-  method void searchByPublisher(string publisher) {}
-  END METHOD
-  
-END CLASS
-
-CLASS UserManager 
+class UserManager 
 private:
-  list<LIBRARYUSER> users
+  list<LibraryUser> users
 
 public:
-  method void registerUser(string full_name, string email, string password) {}
-  END method
+  // Đăng ký
+  void registerUser(UserRole role, string full_name, string email, string password) {}
 
-  method void sendOTP(string email) {}
-  END method
+  // Gửi mã xác thực
+  void sendOTP(string email) {}
 
   //Login Users
-  method void loginUser(string email, string password) {}
-  END METHOD
+  boolean loginUser(string email, string password) {}
   
   //Change Password
-  method void changePassword(int user_id, string old_password, string new_password) {}
-  END METHOD
+  boolean changePassword(int user_id, string old_password, string new_password) {}
 
   //Check Librarian Role
-  method boolean isLibrarian(int user_id) {}
-  END METHOD
+  boolean isLibrarian(int user_id) {}
 
   //EDIT Users
-  method boolean editUser(int user_id, string full_name, string email, string password) {}
-  END METHOD
+  boolean editUser(UserRole role, int user_id, string full_name, string email, string password) {}
 
   //DELETE Users
-  method boolean deleteUser(int user_id) {}
-  END METHOD
-  
-END CLASS
+  boolean deleteUser(int user_id) {}
 
-CLASS BorrowingManager
+class BorrowingManager
 private:
-  list<BORROWINGCARD> borrowing_cards
-
+  list<BorrowingCard> borrowing_cards
 public:
   // Tạo mới thẻ mượn sách
-  method boolean borrowBook(int user_id, string barcode, date due_date) {}
-  END METHOD
+  boolean borrowBook(int user_id, string barcode, date borrow_date, date due_date) {}
+
+  //Kiểm tra giới hạn số lần mượn
+  boolean checkBorrowLimit(int user_id, int max_borrows) {}
 
   // Cập nhật trả sách 
-  method boolean returnBook(string barcode, date return_date) {}
-  END METHOD
+  boolean returnBook(int card_id, user_id, string barcode, date return_date) {}
 
   // Gia hạn ngày trả sách
-  method boolean extendDueDate(int card_id, date new_due_date, int max_extensions) {}
-  END METHOD
-  
+  boolean extendDueDate(int card_id, user_id, date new_due_date, int max_extensions) {}
+
   //Lịch sử mượn sách của người dùng
-  method list<BORROWINGCARD> getUserBorrowingHistory(int user_id) {}
-  END method
+  list<BorrowingCard> getUserBorrowingHistory(int user_id) {}
+  list<ReserveCard> getUserReserveHistory(int user_id) {}
+
+class ReservationManager
+private:
+  list<ReservationCard> reservation_cards
+public:
+  // Tạo mới thẻ đặt trước
+  boolean reserveBook(int user_id, string barcode, date reservation_date, date pickup_deadline) {}
+
+  // Hủy đặt trước
+  boolean cancelReservation(int reservation_id) {}
+
+  // Hủy đặt trước nếu quá hạn đến ngày lấy sách
+  boolean autoCancelExpiredReservations(int reservation_id, int user_id, date current_date) {}
+
+  // Nhận sách đã đặt trước
+  boolean pickupBook(int reservation_id, int user_id) {}
+
+  // Chuyển từ đặt trước sang mượn sách
+  boolean transferReservationToBorrow(int reservation_id, int user_id, string barcode, date borrow_date, date due_date) {}
   
-  // TÍnh tổng tiền phạt của người dùng
-  method int calculateUserTotalFines(int user_id, int daily_rate) {}
-  END method
-
-END CLASS
-
+  // Giới hạn đặt trước cho mỗi cuốn sách chỉ 1 người dùng được đặt trước
+  boolean checkReservationLimit(int user_id, string barcode) {}
