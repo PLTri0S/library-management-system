@@ -1,15 +1,8 @@
-ENUM BOOKSTATUS
-  AVAILABLE
-  LOANED
-  LOST
-END ENUM
+enum BookStatus { AVAILABLE, LOANED, LOST }
+enum UserRole { LIBRARIAN, MEMBER }
 
-ENUM USERROLE
-  ADMIN
-  MEMBER
-END ENUM
-
-CLASS BOOK
+//Các trường của sách
+CLASS BOOK 
 private:
   int m_book_id
   string m_ISBN
@@ -19,351 +12,156 @@ private:
   date m_year
   string m_genre
   string m_language
-  
-  constructor BOOK(int book_id, string isbn, string title, string author, string publisher, date year, string genre, string language) : 
-  m_book_id(book_id), m_ISBN(isbn), m_title(title), m_author(author), m_publisher(publisher), m_year(year), m_genre(genre), m_language(language)
-  END CONSTRUCTOR
-
-  getter int getBookID() { return m_book_id }
-  getter string getISBN() { return m_ISBN }
-  getter string getTitle() { return m_title }
-  getter string getAuthor() { return m_author }
-  getter string getPublisher() { return m_publisher }
-  getter date getYear() { return m_year }
-  getter string getGenre() { return m_genre }
-  getter string getLanguage() { return m_language }
-  END GETTERS
-
-  setter void setTitle(string title) { m_title = title }
-  setter void setAuthor(string author) { m_author = author }
-  setter void setPublisher(string publisher) { m_publisher = publisher }
-  setter void setYear(DATE year) { m_year = year }
-  setter void setGenre(string genre) { m_genre = genre }
-  setter void setLanguage(string language) { m_language = language }
-  END SETTERS
-
 END CLASS
 
-CLASS BOOKCOPY
+//Các trường của 1 bản vật lý của sách
+CLASS BOOKCOPY 
 private:
-  int m_copy_id 
   int m_book_id // Foreign key to BOOK
   string m_barcode
   string m_shelf_location
-  status m_book_status
-
-  constructor BOOKCOPY(int copy_id, int book_id, string barcode, string shelf_location, status book_status) : 
-  m_copy_id(copy_id), m_book_id(book_id), m_barcode(barcode), m_shelf_location(shelf_location), m_book_status(book_status)
-  END CONSTRUCTOR
-
-  getter int getCopyID() { return m_copy_id }
-  getter int getBookID() { return m_book_id }
-  getter string getBarcode() { return m_barcode }
-  getter string getShelfLocation() { return m_shelf_location }
-  getter status getBookStatus() { return m_book_status }
-  END GETTERS
-
-  //Setters for status
-  setter void setBookStatus(BOOKSTATUS status) { m_book_status = status }
-  END SETTER
-
-  method boolean isAvailable() { return m_book_status == AVAILABLE }
-  END METHOD
-
+  status m_book_status 
 END CLASS
 
-CLASS LIBRARYUSER
+// Các trường của 1 người dùng
+CLASS LIBRARYUSER 
 private:
   int m_user_id
   string m_full_name
   string m_email
   string m_password_hash
   date m_created_at
-
-  constructor LIBRARYUSER(int user_id, string full_name, string email, string password_hash) : 
-  m_user_id(user_id), m_full_name(full_name), m_email(email), m_password_hash(password_hash), m_created_at(today)
-  END CONSTRUCTOR
-
-  getter int getUserID() { return m_user_id }
-  getter string getFullName() { return m_full_name }
-  getter string getEmail() { return m_email }
-  getter DATE getCreatedAt() { return m_created_at }
-  END GETTERS
-
 END CLASS
 
-CLASS BORROWINGCARD
+// Các trường của 1 thẻ mượn
+CLASS BORROWINGCARD 
 private:
   int m_card_id
   int m_user_id
-  int m_copy_id
+  int m_barcode
   date m_borrow_date
   date m_due_date
   date m_return_date
   int m_extensions_used
   int m_fine_amount
 
-  constructor BORROWINGCARD(int card_id, int user_id, int copy_id, date borrow_date, date due_date, int extensions_used, int fine_amount) : 
-  m_card_id(card_id), m_user_id(user_id), m_copy_id(copy_id), m_borrow_date(borrow_date), 
-  m_due_date(due_date), m_return_date(null), m_extensions_used(extensions_used), m_fine_amount(fine_amount)
-  END CONSTRUCTOR
-
-  getter int getCardID() { return m_card_id }
-  getter int getUserID() { return m_user_id }
-  getter int getCopyID() { return m_copy_id }
-  getter date getBorrowDate() { return m_borrow_date }
-  getter date getDueDate() { return m_due_date }
-  getter date getReturnDate() { return m_return_date }
-  getter int getExtensionsUsed() { return m_extensions_used }
-  getter int getFineAmount() { return m_fine_amount }
-  END GETTERS
-
-  method boolean isOverdue() { return today > m_due_date AND m_return_date == null }
+public:
+  // Kiểm tra quá hạn 
+  method boolean isOverdue(date current_date) {}
   END METHOD
 
-  method void returnBook(DATE return_date) { 
-    m_return_date = return_date 
-    if isOverdue() { calculateFine() }
-  }
+  // Kiểm tra có thể gia hạn được không 
+  method boolean canExtend(int max_extensions) {}
   END METHOD
 
-  method boolean canExtend() { 
-    return m_extensions_used < MAX_EXTENSIONS
-  }
-  END METHOD
-
-  method void extendDueDate() { 
-    if canExtend() {
-      m_due_date = m_due_date + 7 // days
-      m_extensions_used = m_extensions_used + 1
-    } else {
-      calculateFine()
-    }
-  }
-  END METHOD
-  
-  method void calculateFine() {}
+  //Tính tiền phạt
+  method int calculateFine(int fine_amount) {}
   END METHOD
 
 END CLASS
 
-CLASS BOOK_MANAGEMENT_SYSTEM
+CLASS BookManager
 private:
   list<BOOK> books
   list<BOOKCOPY> book_copies
 
-  //Helper methods
-  methor generateBookID { 
-    return books.size() + 1
-  }
-  END METHOD
-
-  method generateCopyID() { 
-    return book_copies.size() + 1
-  }
-  END METHOD
-
-  method BOOK findBook(int book_id) {
-    for each book in books {
-      if book.getBookID() == book_id { return book }
-    }
-    return null
-  }
-  END METHOD
-
-  method BOOKCOPY findBookCopy(int copy_id) {
-    for each copy in book_copies {
-      if copy.getCopyID() == copy_id { return copy }
-    }
-    return null
-  }
-  END METHOD
-
-  private method boolean existsBookWithISBN(string isbn) {
-    for each book in books {
-      if book.getISBN() == isbn { return true }
-    }
-    return false
-  }
-  END METHOD
-
+public:
   //ADD BOOKS
-  method void addBook(string isbn, string title, string author, string publisher, DATE year, string genre, string language) { 
-    if existsBookWithISBN(isbn) { print("Book already exists") return }
-
-    int new_id = generateBookID()
-    BOOK book = new BOOK(new_id, isbn, title, author, publisher, year, genre, language)
-    books.add(book)
-  }
+  method void addBook(string isbn, string title, string author, string publisher, date year, string genre, string language) {}
   END METHOD
 
-  method void addBookCopy(int book_id, string barcode, string shelf_location) { 
-    if findBook(book_id) == null { print("Book not found") return }
-    // Check barcode
-    for each copy in book_copies {
-      if copy.getBarcode() == barcode { print("Book copy already exists") return }
-    }
-    int new_id = generateCopyID()
-    BOOKCOPY copy = new BOOKCOPY(new_id, book_id, barcode, shelf_location, AVAILABLE)
-    book_copies.add(copy)
-  }
+  //Add copy of books
+  method void addBookCopy(int book_id, string barcode, string shelf_location) {} 
   END METHOD
   
   //EDIT BOOKS
-  method boolean editBook(int book_id, string new_title, string new_author, string new_publisher, DATE new_year, string new_genre, string new_language) {
-    BOOK book = findBook(book_id)
-    if book == null { print("Book not found") return false }
-    // Update fields
-    book.setTitle(new_title)
-    book.setAuthor(new_author)
-    book.setPublisher(new_publisher)
-    book.setYear(new_year)
-    book.setGenre(new_genre)
-    book.setLanguage(new_language)
-    return true
-  }
+  method boolean editBook(string new_title, string new_author, string new_publisher, date new_year, string new_genre, string new_language) {}
   END METHOD
 
   //DELETE BOOKS  
-  method boolean deleteBook(int book_id) { 
-    BOOK book = findBook(book_id)
-    if book == null { print("Book not found") return false }
-    // Remove copies
-    list<BOOKCOPY> copies_to_remove = []
-    for each copy in book_copies {
-      if copy.getBookID() == book_id { copies_to_remove.add(copy) }
-    }
-    for each copy in copies_to_remove { book_copies.remove(copy) }
-    books.remove(book)
-    return true
-  }
+  method boolean deleteBook(int book_id) {}
   END METHOD
 
   //SEARCH & SORT
-  method toLowerCase(string str) {}
+  //Chuyển về chữ thường
+  method string toLowerCase(string str) {}
   END METHOD
 
-  method list<BOOK> searchByKeyword(string keyword) { 
-    keyword_lower = toLowerCase(keyword)
-    ....    
-
-    
-    return results
-  }
+  //Tìm theo từ khóa
+  method list<BOOK> searchByKeyword(string keyword) {}
   END METHOD
 
+  method void searchByAuthor(string author) {}
+  END METHOD
+
+  method void searchByTitle(string title) {}
+  END METHOD
+  
+  method void searchByGenre(string genre) {}
+  END METHOD
+
+  method void searchByPublisher(string publisher) {}
+  END METHOD
+  
 END CLASS
 
-
-
-
-
-
-CLASS USER_MANAGEMENT_SYSTEM  //NOT DONE YET
+CLASS UserManager 
 private:
   list<LIBRARYUSER> users
 
-  // Helper
-  method int generateUserID() { 
-    return users.size() + 1
-  }
+public:
+  method void registerUser(string full_name, string email, string password) {}
+  END method
+
+  method void sendOTP(string email) {}
+  END method
+
+  //Login Users
+  method void loginUser(string email, string password) {}
+  END METHOD
+  
+  //Change Password
+  method void changePassword(int user_id, string old_password, string new_password) {}
   END METHOD
 
-  public method LIBRARYUSER findUser(int user_id) {
-    for each user in users {
-      if user.getUserID() == user_id { return user }
-    }
-    return null
-  }
+  //Check Librarian Role
+  method boolean isLibrarian(int user_id) {}
   END METHOD
 
-  method boolean existsUserWithEmail(string email) {
-    for each user in users {
-      if user.getEmail() == email { return true }
-    }
-    return false
-  }
+  //EDIT Users
+  method boolean editUser(int user_id, string full_name, string email, string password) {}
   END METHOD
 
-  method void registerUser(string full_name, string email, string password) { 
-    if existsUserWithEmail(email) { print("Email already exists") return }
-    if full_name.length() == 0 OR email.length() == 0 OR password.length() == 0 { print("Fields cannot be empty") return }
-    if NOT isValidEmail(email) { print("Invalid email format") return }
-    if password.length() < 8 { print("Password too short") return }
-    // Hash password
-    string password_hash = hash_password(password)
-    sendOTP(email)
-    string input_otp = ...
-    if verifyOTP(email, input_otp) {
-      int new_id = generateUserID()
-      LIBRARYUSER user = new LIBRARYUSER(new_id, full_name, email, password_hash, current_date())
-      users.add(user)
-    } else {
-      print("OTP verification failed")
-    }
-  }
+  //DELETE Users
+  method boolean deleteUser(int user_id) {}
   END METHOD
-
+  
 END CLASS
 
 CLASS BorrowingManager
 private:
   list<BORROWINGCARD> borrowing_cards
 
-  // Helper
-  private method int generateCardID() { 
-    return borrowing_cards.size() + 1
-  }
+public:
+  // Tạo mới thẻ mượn sách
+  method boolean borrowBook(int user_id, string barcode, date due_date) {}
   END METHOD
 
-  public method BORROWINGCARD findActiveBorrowingCard(int copy_id) {
-    for each card in borrowing_cards {
-      if card.getCopyID() == copy_id AND card.getReturnDate() == null { return card }
-    }
-    return null
-  }
+  // Cập nhật trả sách 
+  method boolean returnBook(string barcode, date return_date) {}
   END METHOD
 
-
-  method boolean borrowBook(int user_id, int copy_id, UserManager userManager, BookManager bookManager) {
-    LIBRARYUSER user = userManager.findUser(user_id)
-    if user == null { print("User not found") return false }
-    BOOKCOPY copy = bookManager.findBookCopy(copy_id)
-    if copy == null { print("Copy not found") return false }
-    if NOT copy.isAvailable() { print("Book not available") return false }
-    // Check user limits (e.g., max books, no unpaid fines) - add fields if needed
-    DATE due_date = current_date() + DEFAULT_LOAN_DAYS // days
-    int new_id = generateCardID()
-    BORROWINGCARD card = new BORROWINGCARD(new_id, user_id, copy_id, current_date(), due_date, 0, 0)
-    borrowing_cards.add(card)
-    copy.setBookStatus(LOANED)
-    return true
-  }
+  // Gia hạn ngày trả sách
+  method boolean extendDueDate(int card_id, date new_due_date, int max_extensions) {}
   END METHOD
-
-  method boolean returnBook(int copy_id, BookManager bookManager) {
-    BORROWINGCARD card = findActiveBorrowingCard(copy_id)
-    if card == null { print("No active borrow for this copy") return false }
-    card.returnBook(current_date())
-    BOOKCOPY copy = bookManager.findBookCopy(copy_id)
-    if copy != null {
-      copy.setBookStatus(AVAILABLE)
-    }
-    return true
-  }
-  END METHOD
-
-  method list<BORROWINGCARD> getUserBorrowingHistory(int user_id, UserManager userManager) {
-    if userManager.findUser(user_id) == null { print("User not found") return [] }
-    list<BORROWINGCARD> history = []
-    for each card in borrowing_cards {
-      if card.getUserID() == user_id {
-        history.add(card)
-      }
-    }
-    // Optionally sort by borrow_date descending
-    return history
-  }
-  END METHOD
+  
+  //Lịch sử mượn sách của người dùng
+  method list<BORROWINGCARD> getUserBorrowingHistory(int user_id) {}
+  END method
+  
+  // TÍnh tổng tiền phạt của người dùng
+  method int calculateUserTotalFines(int user_id, int daily_rate) {}
+  END method
 
 END CLASS
+
